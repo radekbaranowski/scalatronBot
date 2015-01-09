@@ -14,27 +14,20 @@ class ControlFunction {
 
   def respond(input: String) = {
     n += 1
-    val tokens = input.split('(')
-    val opcode = tokens(0)
+
+
+    val (opcode,paramMap) = CommandParser(input)
 
     opcode match {
       case "Welcome" =>
-        val rest = tokens(1).dropRight(1)
-        val params = rest.split(',')
-        val strPairs = params.map(s => s.split('='))
-        val kvPairs = strPairs.map(a => (a(0), a(1)))
-        val paramMap = kvPairs.toMap
+
         var round = paramMap("round").toInt
         filePath = "d:\\botlog\\bot_"+round+".log"
         if (loggingEnabled) {logFile = new FileWriter(filePath)}
         "Status(text=hello)|Log(text="+filePath+")"
 
       case "React" =>
-        val rest = tokens(1).dropRight(1)
-        val params = rest.split(',')
-        val strPairs = params.map(s => s.split('='))
-        val kvPairs = strPairs.map(a => (a(0), a(1)))
-        val paramMap = kvPairs.toMap
+
         val energy = paramMap("energy").toInt
         if (loggingEnabled) {
           logFile.append(paramMap("time").toCharArray)
@@ -51,6 +44,29 @@ class ControlFunction {
     }
 
   }
+
+
 }
 
+object CommandParser {
+  def apply(command:String) = {
+    def splitParam(param: String) = {
+      val segments = param.split('=')
+      if( segments.length!=2)
+        throw new IllegalStateException("invalid key/value pair: " + param)
+      (segments(0),segments(1))
+    }
 
+    val segments = command.split('(')
+    if (segments.length != 2)
+      throw new IllegalStateException("invalid command: " + command)
+
+    val params = segments(1).dropRight(1).split(',')
+    val keyValuePairs = params.map(splitParam).toMap
+
+    (segments(0),keyValuePairs)
+
+  }
+
+
+}
